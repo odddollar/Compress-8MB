@@ -7,6 +7,10 @@
     text-align: center;
 }
 
+.full-width {
+    width: 100%;
+}
+
 .setting-elements>*:not(:last-child) {
     margin-bottom: var(--pico-spacing);
 }
