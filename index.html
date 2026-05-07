@@ -18,28 +18,41 @@
     </article>
 
     <!-- Main body -->
-    <article class="container">
+    <article class="container setting-elements">
         <!-- Drag and drop file selection box -->
-        <label for="upload-box">Video File</label>
-        <div id="upload-box" class="upload-box">
-            <i class="fa fa-video-camera"></i>
-            Click to choose a video file, or drag one here
+        <div>
+            <label for="upload-box">Video File</label>
+            <div id="upload-box" class="center upload-box">
+                <i class="fa fa-video-camera"></i>
+                Click to choose a video file, or drag one here
+            </div>
         </div>
 
         <!-- Codec selection for compression -->
-        <label for="codec-grid">Video Codec</label>
-        <div id="codec-grid" class="codec-grid center">
-            <div class="codec-card active">
-                <strong>H.264</strong>
-                <small>Best compatibility</small>
+        <div>
+            <label for="codec-grid">Video Codec</label>
+            <div id="codec-grid" class="codec-grid center">
+                <div class="codec-card active">
+                    <strong>H.264</strong>
+                    <small>Best compatibility</small>
+                </div>
+                <div class="codec-card">
+                    <strong>H.265</strong>
+                    <small>Improved image quality</small>
+                </div>
+                <div class="codec-card">
+                    <strong>AV1</strong>
+                    <small>Best image quality</small>
+                </div>
             </div>
-            <div class="codec-card">
-                <strong>H.265</strong>
-                <small>Improved image quality</small>
-            </div>
-            <div class="codec-card">
-                <strong>AV1</strong>
-                <small>Best image quality</small>
+        </div>
+
+        <!-- Target file size -->
+        <div>
+            <label for="target-size">Target File Size</label>
+            <div class="target-size-group">
+                <input id="target-size" class="target-size-input" type="number" min="1" max="500" step="1" value="8">
+                <span>MB</span>
             </div>
         </div>
     </article>

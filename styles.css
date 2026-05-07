@@ -1,16 +1,19 @@
-/* Maintain consistent padding */
+/* Global styles */
 .container {
-    padding: 1rem;
+    padding: var(--pico-spacing);
 }
 
-/* Simple centring  */
 .center {
     text-align: center;
 }
 
+.setting-elements>*:not(:last-child) {
+    margin-bottom: var(--pico-spacing);
+}
+
 /* Title styling */
 .hero {
-    margin-top: 1rem;
+    margin-top: var(--pico-spacing);
 }
 
 .hero p {
@@ -21,16 +24,14 @@
 .upload-box {
     border: 2px dashed var(--pico-muted-border-color);
     border-radius: 1rem;
-    padding: 3rem 1rem;
-    margin-bottom: 1rem;
-    text-align: center;
+    padding: calc(var(--pico-spacing) * 3) var(--pico-spacing);
     color: var(--pico-muted-color);
     cursor: pointer;
 }
 
 .upload-box i {
     font-size: 2rem;
-    margin-bottom: 1rem;
+    margin-bottom: var(--pico-spacing);
     display: block;
 }
 
@@ -38,13 +39,13 @@
 .codec-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: var(--pico-spacing);
 }
 
 .codec-card {
     border: 1px solid var(--pico-muted-border-color);
     border-radius: 1rem;
-    padding: 1rem;
+    padding: var(--pico-spacing);
     cursor: pointer;
 }
 
@@ -57,4 +58,18 @@
     display: block;
     margin-bottom: 0;
     color: var(--pico-muted-color);
+}
+
+/* Target size styling */
+.target-size-group {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--pico-spacing) / 2);
+}
+
+input.target-size-input {
+    padding: calc(var(--pico-form-element-spacing-vertical) / 2) calc(var(--pico-form-element-spacing-horizontal) / 2);
+    margin-bottom: 0;
+    width: clamp(8rem, 18vw, 12rem);
+    height: auto;
 }
