@@ -1,3 +1,60 @@
-body {
+/* Maintain consistent padding */
+.container {
+    padding: 1rem;
+}
+
+/* Simple centring  */
+.center {
     text-align: center;
+}
+
+/* Title styling */
+.hero {
+    margin-top: 1rem;
+}
+
+.hero p {
+    margin-bottom: 0;
+}
+
+/* Upload box styling */
+.upload-box {
+    border: 2px dashed var(--pico-muted-border-color);
+    border-radius: 1rem;
+    padding: 3rem 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: var(--pico-muted-color);
+    cursor: pointer;
+}
+
+.upload-box i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* Codec selection styling */
+.codec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.codec-card {
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 1rem;
+    padding: 1rem;
+    cursor: pointer;
+}
+
+.codec-card.active {
+    border-color: var(--pico-primary);
+    background: color-mix(in srgb, var(--pico-primary) 20%, transparent);
+}
+
+.codec-card small {
+    display: block;
+    margin-bottom: 0;
+    color: var(--pico-muted-color);
 }
