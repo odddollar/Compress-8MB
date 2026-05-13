@@ -34,15 +34,15 @@
             <div id="codec-grid" class="codec-grid center">
                 <div class="codec-card active">
                     <strong>H.264</strong>
-                    <small>Best compatibility</small>
+                    <small>Best compatibility (Fastest)</small>
                 </div>
                 <div class="codec-card">
                     <strong>H.265</strong>
-                    <small>Improved image quality</small>
+                    <small>Improved image quality (Slower)</small>
                 </div>
                 <div class="codec-card">
                     <strong>AV1</strong>
-                    <small>Best image quality</small>
+                    <small>Best image quality (Slowest)</small>
                 </div>
             </div>
         </div>
@@ -83,7 +83,7 @@
     </article>
 
     <!-- Progress and download -->
-    <article class="container space-elements">
+    <article class="container space-elements" hidden>
         <p id="progress-text">Initialising...</p>
         <progress id="progress-bar" class="progress-bar full-width" max="100" value="0"></progress>
         <button id="download-btn" class="full-width" hidden>
