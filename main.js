@@ -45,6 +45,28 @@ document.querySelectorAll(".codec-card").forEach(card => {
 // Utilities //
 ///////////////
 
+// Get compression settings
+function getCompressionSettings() {
+    // Get selected codec
+    const codecCard = document.querySelector(".codec-card.active strong");
+    const codec = codecCard ? codecCard.textContent.trim() : null;
+
+    // Get target size and validate
+    const targetSizeRaw = parseInt(document.getElementById("target-size").value, 10);
+    if (!Number.isInteger(targetSizeRaw) || targetSizeRaw < 1) {
+        return null;
+    }
+
+    // Get frame rate
+    const frameRateRaw = document.getElementById("frame-rate").value;
+    const frameRate = frameRateRaw === "Same as source" ? -1 : parseInt(frameRateRaw, 10);
+
+    // Get audio inclusion
+    const includeAudio = document.getElementById("include-audio").checked;
+
+    return { codec, targetSizeMB: targetSizeRaw, frameRate, includeAudio };
+}
+
 // Get duration of vide object using temporary object URL
 function getVideoDuration(file) {
     return new Promise((resolve, reject) => {
@@ -108,4 +130,17 @@ uploadBox.addEventListener("drop", (e) => {
             uploadText.textContent = file.name;
         }
     }
+});
+
+/////////////////////
+// Run compression //
+/////////////////////
+
+document.getElementById("compress-btn").addEventListener("click", () => {
+    const settings = getCompressionSettings();
+    if (!settings) {
+        console.error("Invalid compression settings");
+        return;
+    }
+    console.log("Compression settings:", settings);
 });
