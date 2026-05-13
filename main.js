@@ -41,6 +41,28 @@ document.querySelectorAll(".codec-card").forEach(card => {
     });
 });
 
+///////////////
+// Utilities //
+///////////////
+
+// Get duration of vide object using temporary object URL
+function getVideoDuration(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = () => {
+            URL.revokeObjectURL(url);
+            resolve(video.duration);
+        };
+        video.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("Could not read video metadata"));
+        };
+        video.src = url;
+    });
+}
+
 //////////////////////////
 // File upload handling //
 //////////////////////////
@@ -58,7 +80,8 @@ uploadBox.addEventListener("click", () => {
 // File input change handler
 fileInput.addEventListener("change", (e) => {
     if (e.target.files.length > 0) {
-        uploadText.textContent = e.target.files[0].name;
+        const file = e.target.files[0];
+        uploadText.textContent = file.name;
     }
 });
 
