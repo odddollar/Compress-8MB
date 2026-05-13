@@ -4,18 +4,22 @@
 // FFmpeg loading //
 ////////////////////
 
+// Get elements
 const loadingScreen = document.getElementById("loading-screen");
 const loadingSpinner = document.getElementById("loading-spinner");
 const loadingError = document.getElementById("loading-error");
 const loadedPage = document.getElementById("loaded-page");
 
+// Pull FFmpeg from CDN
+const { createFFmpeg } = FFmpeg;
+const ffmpeg = createFFmpeg({
+    corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
+    log: false,
+});
+
+// Load and show elements when ready
 (async () => {
     try {
-        const { createFFmpeg } = FFmpeg;
-        const ffmpeg = createFFmpeg({
-            corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
-            log: false,
-        });
         await ffmpeg.load();
         loadingScreen.hidden = true;
         loadedPage.hidden = false;
