@@ -43,6 +43,11 @@
     display: block;
 }
 
+.upload-box.drag-over {
+    border-color: var(--pico-primary);
+    background: color-mix(in srgb, var(--pico-primary) 10%, transparent);
+}
+
 /* Codec selection styling */
 .codec-grid {
     display: grid;
