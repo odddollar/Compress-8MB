@@ -76,7 +76,7 @@ body {
 }
 
 input.target-size-input {
-    padding: calc(var(--pico-form-element-spacing-vertical) / 2) calc(var(--pico-form-element-spacing-horizontal) / 2);
+    padding: calc(var(--pico-form-element-spacing-vertical) / 2) var(--pico-form-element-spacing-horizontal);
     margin-bottom: 0;
     width: clamp(8rem, 18vw, 12rem);
     height: auto;
