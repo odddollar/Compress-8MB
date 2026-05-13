@@ -52,8 +52,8 @@ function getCompressionSettings() {
     const codec = codecCard ? codecCard.textContent.trim() : null;
 
     // Get target size and validate
-    const targetSizeRaw = parseInt(document.getElementById("target-size").value, 10);
-    if (!Number.isInteger(targetSizeRaw) || targetSizeRaw < 1) {
+    const targetSizeRaw = parseFloat(document.getElementById("target-size").value);
+    if (targetSizeRaw <= 0) {
         return null;
     }
 
@@ -73,7 +73,7 @@ function calculateBitrate(durationSeconds, desiredSizeMB, includeAudio) {
     let videoDesiredSizeMB;
 
     if (includeAudio) {
-        // Subtract audio size to get size for video
+        // Subtract audio size to get remaining size for video
         const audioBitrateKbps = 96;
         const audioSizeMB = (audioBitrateKbps * durationSeconds) / kbitsPerMB;
         const remainingSizeMB = desiredSizeMB - audioSizeMB;
@@ -87,7 +87,7 @@ function calculateBitrate(durationSeconds, desiredSizeMB, includeAudio) {
 
 // Get duration of vide object using temporary object URL
 function getVideoDuration(file) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const url = URL.createObjectURL(file);
         const video = document.createElement("video");
         video.preload = "metadata";
@@ -97,7 +97,7 @@ function getVideoDuration(file) {
         };
         video.onerror = () => {
             URL.revokeObjectURL(url);
-            reject(new Error("Could not read video metadata"));
+            resolve(null);
         };
         video.src = url;
     });
@@ -154,7 +154,7 @@ uploadBox.addEventListener("drop", (e) => {
 // Run compression //
 /////////////////////
 
-document.getElementById("compress-btn").addEventListener("click", () => {
+document.getElementById("compress-btn").addEventListener("click", async () => {
     // Check that file selected
     if (fileInput.files.length === 0) {
         alert("Please select a video file to compress.");
@@ -164,8 +164,16 @@ document.getElementById("compress-btn").addEventListener("click", () => {
     // Get settings from UI
     const settings = getCompressionSettings();
     if (!settings) {
-        console.error("Invalid compression settings");
+        alert("Invalid compression settings");
         return;
     }
     console.log("Compression settings:", settings);
+
+    // Get video duration
+    const duration = await getVideoDuration(fileInput.files[0]);
+    if (!duration) {
+        alert("Failed to get video duration");
+        return;
+    }
+    console.log("Video duration (seconds):", duration);
 });
