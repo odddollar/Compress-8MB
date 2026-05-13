@@ -18,7 +18,7 @@
     </article>
 
     <!-- Main body -->
-    <article class="container setting-elements">
+    <article class="container space-elements">
         <!-- Drag and drop file selection box -->
         <div>
             <label for="upload-box">Video File</label>
@@ -80,6 +80,15 @@
         <div>
             <button class="full-width">Compress Video</button>
         </div>
+    </article>
+
+    <!-- Progress and download -->
+    <article class="container space-elements">
+        <p id="progress-text">Initialising...</p>
+        <progress id="progress-bar" class="progress-bar full-width" max="100" value="0"></progress>
+        <button id="download-btn" class="full-width" hidden>
+            <i class="fa fa-download"></i> Download Compressed Video
+        </button>
     </article>
 
     <!-- Footer -->
