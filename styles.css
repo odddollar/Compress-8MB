@@ -1,4 +1,8 @@
 /* Global styles */
+body {
+    padding-top: var(--pico-spacing);
+}
+
 .container {
     padding: var(--pico-spacing);
 }
@@ -17,15 +21,6 @@
 
 .space-elements> :not([hidden]):has(~ :not([hidden])) {
     margin-bottom: var(--pico-spacing);
-}
-
-/* Title styling */
-.hero {
-    margin-top: var(--pico-spacing);
-}
-
-.hero p {
-    margin-bottom: 0;
 }
 
 /* Upload box styling */
