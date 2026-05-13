@@ -67,6 +67,24 @@ function getCompressionSettings() {
     return { codec, targetSizeMB: targetSizeRaw, frameRate, includeAudio };
 }
 
+// Calculate video bitrate for target size account for audio
+function calculateBitrate(durationSeconds, desiredSizeMB, includeAudio) {
+    const kbitsPerMB = 8192;
+    let videoDesiredSizeMB;
+
+    if (includeAudio) {
+        // Subtract audio size to get size for video
+        const audioBitrateKbps = 96;
+        const audioSizeMB = (audioBitrateKbps * durationSeconds) / kbitsPerMB;
+        const remainingSizeMB = desiredSizeMB - audioSizeMB;
+        videoDesiredSizeMB = remainingSizeMB * 0.85;
+    } else {
+        videoDesiredSizeMB = desiredSizeMB * 0.85;
+    }
+
+    return (videoDesiredSizeMB * kbitsPerMB) / durationSeconds;
+}
+
 // Get duration of vide object using temporary object URL
 function getVideoDuration(file) {
     return new Promise((resolve, reject) => {
@@ -137,6 +155,13 @@ uploadBox.addEventListener("drop", (e) => {
 /////////////////////
 
 document.getElementById("compress-btn").addEventListener("click", () => {
+    // Check that file selected
+    if (fileInput.files.length === 0) {
+        alert("Please select a video file to compress.");
+        return;
+    }
+
+    // Get settings from UI
     const settings = getCompressionSettings();
     if (!settings) {
         console.error("Invalid compression settings");
