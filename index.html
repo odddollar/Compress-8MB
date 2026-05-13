@@ -13,11 +13,12 @@
 <body>
     <!-- Loading spinner -->
     <article id="loading-screen" class="container center space-elements">
-        <span aria-busy="true">Loading FFmpeg WASM</span>
+        <span id="loading-spinner" aria-busy="true">Loading FFmpeg WASM</span>
+        <span id="loading-error"></span>
     </article>
 
     <!-- Main page elements -->
-    <div id="loaded-page">
+    <div id="loaded-page" hidden>
         <!-- Title header -->
         <article class="container center space-elements">
             <h1>Compress 8MB</h1>
@@ -112,6 +113,7 @@
         </article>
     </div>
 
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
     <script src="main.js"></script>
 </body>
 
