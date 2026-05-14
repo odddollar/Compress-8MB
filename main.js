@@ -101,7 +101,11 @@ function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
         videoDesiredSizeMB = desiredSizeMB * 0.95;
     }
 
-    return (videoDesiredSizeMB * kbitsPerMB) / durationSeconds;
+    // Calculate bitrate
+    const bitrateKbps = (videoDesiredSizeMB * kbitsPerMB) / durationSeconds
+
+    // Clamp video bitrate to avoid nonsense values
+    return Math.max(50, Math.floor(bitrateKbps));
 }
 
 // Convert codec name to ffmpeg arguments
@@ -110,7 +114,7 @@ function getCodecArgs(codec) {
         case "H.264":
             return ["-c:v", "libx264", "-preset", "medium", "-pix_fmt", "yuv420p"];
         case "H.265":
-            return ["-c:v", "libx265", "-preset", "medium", "-pix_fmt", "yuv420p", "-tag:v", "hvc1"];
+            return ["-c:v", "libx265", "-preset", "medium", "-pix_fmt", "yuv420p10le", "-tag:v", "hvc1"];
         case "AV1":
             return ["-c:v", "libaom-av1", "-cpu-used", "4", "-pix_fmt", "yuv420p"];
     }
@@ -118,15 +122,12 @@ function getCodecArgs(codec) {
 
 // Build ffmpeg command based on settings
 function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbps, settings) {
-    // Minimum 50kbps to avoid nonsense values
-    const roundedBitrateKbps = Math.max(50, Math.floor(targetBitrateKbps));
-
     // Build command with codec selection
     const command = [
         "-hide_banner",
         "-i", inputFileName,
         ...getCodecArgs(settings.codec),
-        "-b:v", `${roundedBitrateKbps}k`,
+        "-b:v", `${targetBitrateKbps}k`,
     ];
 
     // Set frame rate if specified
