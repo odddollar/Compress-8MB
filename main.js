@@ -198,10 +198,12 @@ uploadBox.addEventListener("drop", (e) => {
 /////////////////////
 
 // Get progress elements
+const settingsPane = document.getElementById("settings-pane");
 const progressPane = document.getElementById("progress-pane");
 const progressText = document.getElementById("progress-text");
 const progressBar = document.getElementById("progress-bar");
 const downloadBtn = document.getElementById("download-btn");
+const resetBtn = document.getElementById("reset-btn");
 
 // Run ffmpeg command and handle progress
 async function runCompression(inputFile, ffmpegCommand, duration) {
@@ -209,11 +211,11 @@ async function runCompression(inputFile, ffmpegCommand, duration) {
     const outputFileName = ffmpegCommand[ffmpegCommand.length - 1];
 
     try {
-        // Show progress section
+        // Switch visible sections
+        settingsPane.hidden = true;
         progressPane.hidden = false;
-        downloadBtn.hidden = true;
-        progressText.textContent = "Writing input file...";
         progressBar.value = 0;
+        progressText.textContent = `Encoding ${outputFileName}: 0%`;
 
         // Write input file to virtual filesystem
         const fileBuffer = await inputFile.arrayBuffer();
@@ -224,17 +226,17 @@ async function runCompression(inputFile, ffmpegCommand, duration) {
             // Use ratio to calculate progress
             const percent = Math.round(data.ratio * 100);
             progressBar.value = percent;
-            progressText.textContent = `Encoding: ${percent}%`;
+            progressText.textContent = `Encoding ${outputFileName}: ${percent}%`;
         });
 
         // Run ffmpeg
-        progressText.textContent = "Running FFmpeg...";
         await ffmpeg.run(...ffmpegCommand);
 
         // Update ui after successful encoding
         progressText.textContent = "Encoding complete!";
         progressBar.value = 100;
         downloadBtn.hidden = false;
+        resetBtn.hidden = false;
 
         // Set up download handler
         downloadBtn.onclick = () => {
