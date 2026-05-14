@@ -27,7 +27,7 @@
         </article>
 
         <!-- Main body -->
-        <article class="container space-elements">
+        <article id="settings-pane" class="container space-elements">
             <!-- Drag and drop file selection box -->
             <div>
                 <label for="upload-box">Video File</label>
@@ -89,7 +89,9 @@
 
             <!-- Compress video -->
             <div>
-                <button id="compress-btn" class="full-width">Compress Video</button>
+                <button id="compress-btn" class="full-width">
+                    <i class="fa fa-compress"></i> Compress Video
+                </button>
             </div>
         </article>
 
@@ -99,6 +101,9 @@
             <p id="progress-text"></p>
             <button id="download-btn" class="full-width" hidden>
                 <i class="fa fa-download"></i> Download Compressed Video
+            </button>
+            <button id="reset-btn" class="secondary full-width" hidden>
+                <i class="fa fa-refresh"></i> Compress Another Video
             </button>
         </article>
 
