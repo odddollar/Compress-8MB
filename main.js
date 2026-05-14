@@ -1,5 +1,7 @@
 "use strict";
 
+const AUDIO_BITRATE_KBPS = 96;
+
 ////////////////////
 // FFmpeg loading //
 ////////////////////
@@ -67,24 +69,6 @@ function getCompressionSettings() {
     return { codec, targetSizeMB: targetSizeRaw, frameRate, includeAudio };
 }
 
-// Calculate video bitrate for target size account for audio
-function calculateBitrate(durationSeconds, desiredSizeMB, includeAudio) {
-    const kbitsPerMB = 8192;
-    let videoDesiredSizeMB;
-
-    if (includeAudio) {
-        // Subtract audio size to get remaining size for video
-        const audioBitrateKbps = 96;
-        const audioSizeMB = (audioBitrateKbps * durationSeconds) / kbitsPerMB;
-        const remainingSizeMB = desiredSizeMB - audioSizeMB;
-        videoDesiredSizeMB = remainingSizeMB * 0.85;
-    } else {
-        videoDesiredSizeMB = desiredSizeMB * 0.85;
-    }
-
-    return (videoDesiredSizeMB * kbitsPerMB) / durationSeconds;
-}
-
 // Get duration of vide object using temporary object URL
 function getVideoDuration(file) {
     return new Promise((resolve) => {
@@ -101,6 +85,65 @@ function getVideoDuration(file) {
         };
         video.src = url;
     });
+}
+
+// Calculate video bitrate for target size account for audio
+function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
+    const kbitsPerMB = 8000;
+    let videoDesiredSizeMB;
+
+    if (includeAudio) {
+        // Subtract audio size to get remaining size for video
+        const audioSizeMB = (AUDIO_BITRATE_KBPS * durationSeconds) / kbitsPerMB;
+        const remainingSizeMB = desiredSizeMB - audioSizeMB;
+        videoDesiredSizeMB = remainingSizeMB * 0.85;
+    } else {
+        videoDesiredSizeMB = desiredSizeMB * 0.85;
+    }
+
+    return (videoDesiredSizeMB * kbitsPerMB) / durationSeconds;
+}
+
+// Convert codec name to ffmpeg arguments
+function getCodecArgs(codec) {
+    switch (codec) {
+        case "H.264":
+            return ["-c:v", "libx264", "-preset", "medium", "-pix_fmt", "yuv420p"];
+        case "H.265":
+            return ["-c:v", "libx265", "-preset", "medium", "-pix_fmt", "yuv420p", "-tag:v", "hvc1"];
+        case "AV1":
+            return ["-c:v", "libaom-av1", "-cpu-used", "4", "-pix_fmt", "yuv420p"];
+    }
+}
+
+// Build ffmpeg command based on settings
+function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbps, settings) {
+    // Minimum 50kbps to avoid nonsense values
+    const roundedBitrateKbps = Math.max(50, Math.floor(targetBitrateKbps));
+
+    // Build command with codec selection
+    const command = [
+        "-i", inputFileName,
+        ...getCodecArgs(settings.codec),
+        "-b:v", `${roundedBitrateKbps}k`,
+    ];
+
+    // Set frame rate if specified
+    if (settings.frameRate > 0) {
+        command.push("-r", String(settings.frameRate));
+    }
+
+    // Transcode audio if included, discard if not
+    if (settings.includeAudio) {
+        command.push("-c:a", "aac", "-b:a", `${AUDIO_BITRATE_KBPS}k`);
+    } else {
+        command.push("-an");
+    }
+
+    // Optimise for streaming
+    command.push("-movflags", "+faststart", outputFileName);
+
+    return command;
 }
 
 //////////////////////////
@@ -176,4 +219,22 @@ document.getElementById("compress-btn").addEventListener("click", async () => {
         return;
     }
     console.log("Video duration (seconds):", duration);
+
+    // Calculate target bitrate
+    const targetBitrateKbps = calculateBitrateKbps(duration, settings.targetSizeMB, settings.includeAudio);
+    console.log("Calculated target bitrate (kbps):", targetBitrateKbps);
+
+    // Build new file name
+    const inputFileName = fileInput.files[0].name;
+    const inputBaseName = inputFileName.replace(/\.[^.]+$/, "");
+    const outputFileName = `${inputBaseName}_compressed.mp4`;
+
+    // Build ffmpeg command
+    const ffmpegCommand = buildCompressionCommand(
+        inputFileName,
+        outputFileName,
+        targetBitrateKbps,
+        settings,
+    );
+    console.log("FFmpeg command:", ffmpegCommand.join(" "));
 });
