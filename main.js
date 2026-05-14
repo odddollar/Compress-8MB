@@ -197,7 +197,8 @@ uploadBox.addEventListener("drop", (e) => {
 // Run compression //
 /////////////////////
 
-// Get progress elements
+// Get elements
+const compressBtn = document.getElementById("compress-btn");
 const settingsPane = document.getElementById("settings-pane");
 const progressPane = document.getElementById("progress-pane");
 const progressText = document.getElementById("progress-text");
@@ -250,8 +251,10 @@ async function runCompression(inputFile, ffmpegCommand, duration) {
             URL.revokeObjectURL(url);
         };
     } catch (err) {
-        progressText.textContent = `Error: ${err.message}`;
         progressBar.value = 0;
+        downloadBtn.hidden = true;
+        resetBtn.hidden = false;
+        progressText.textContent = `Error: ${err.message}`;
         console.error("FFmpeg error:", err);
     } finally {
         // Clean up filesystem
@@ -262,7 +265,7 @@ async function runCompression(inputFile, ffmpegCommand, duration) {
 }
 
 // Compress button handler
-document.getElementById("compress-btn").addEventListener("click", async () => {
+compressBtn.addEventListener("click", async () => {
     // Check that file selected
     if (fileInput.files.length === 0) {
         alert("Please select a video file to compress.");
@@ -305,4 +308,32 @@ document.getElementById("compress-btn").addEventListener("click", async () => {
 
     // Run compression
     await runCompression(fileInput.files[0], ffmpegCommand, duration);
+});
+
+// Reset ui to initial state
+resetBtn.addEventListener("click", () => {
+    // Hide progress pane, show settings
+    settingsPane.hidden = false;
+    progressPane.hidden = true;
+
+    // Reset progress state
+    progressText.textContent = "";
+    progressBar.value = 0;
+    downloadBtn.hidden = true;
+    downloadBtn.onclick = null;
+    resetBtn.hidden = true;
+
+    // Clear file input and upload label
+    fileInput.value = "";
+    uploadText.textContent = "Click to choose a video file, or drag one here";
+
+    // Reset codec selection to first card
+    document.querySelectorAll(".codec-card").forEach((c, i) => {
+        c.classList.toggle("active", i === 0);
+    });
+
+    // Reset target size, frame rate, and audio toggle to defaults
+    document.getElementById("target-size").value = 8;
+    document.getElementById("frame-rate").value = "Same as source";
+    document.getElementById("include-audio").checked = true;
 });
