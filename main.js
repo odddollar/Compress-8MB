@@ -96,9 +96,9 @@ function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
         // Subtract audio size to get remaining size for video
         const audioSizeMB = (AUDIO_BITRATE_KBPS * durationSeconds) / kbitsPerMB;
         const remainingSizeMB = desiredSizeMB - audioSizeMB;
-        videoDesiredSizeMB = remainingSizeMB * 0.85;
+        videoDesiredSizeMB = remainingSizeMB * 0.95;
     } else {
-        videoDesiredSizeMB = desiredSizeMB * 0.85;
+        videoDesiredSizeMB = desiredSizeMB * 0.95;
     }
 
     return (videoDesiredSizeMB * kbitsPerMB) / durationSeconds;
