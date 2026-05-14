@@ -12,7 +12,7 @@ const loadingSpinner = document.getElementById("loading-spinner");
 const loadingError = document.getElementById("loading-error");
 const loadedPage = document.getElementById("loaded-page");
 
-// Pull FFmpeg from CDN
+// Pull ffmpeg from cdn
 const { createFFmpeg } = FFmpeg;
 const ffmpeg = createFFmpeg({
     corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
@@ -208,14 +208,12 @@ const downloadBtn = document.getElementById("download-btn");
 const resetBtn = document.getElementById("reset-btn");
 
 // Run ffmpeg command and handle progress
-async function runCompression(inputFile, ffmpegCommand, duration) {
-    const inputFileName = ffmpegCommand[1];
-    const outputFileName = ffmpegCommand[ffmpegCommand.length - 1];
-
+async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFileName) {
     try {
         // Switch visible sections
         settingsPane.hidden = true;
         progressPane.hidden = false;
+        progressText.textContent = "Starting...";
         progressBar.value = 0;
 
         // Write input file to virtual filesystem
@@ -231,7 +229,7 @@ async function runCompression(inputFile, ffmpegCommand, duration) {
 
         // Set up logger to show ffmpeg output
         ffmpeg.setLogger(({ type, message }) => {
-            if (type === "ffout" || type === "fferr") {
+            if ((type === "ffout" || type === "fferr") && /^frame=/.test(message)) {
                 progressText.textContent = message;
             }
         });
@@ -277,6 +275,7 @@ compressBtn.addEventListener("click", async () => {
         alert("Please select a video file to compress.");
         return;
     }
+    const file = fileInput.files[0];
 
     // Get settings from UI
     const settings = getCompressionSettings();
@@ -287,7 +286,7 @@ compressBtn.addEventListener("click", async () => {
     console.log("Compression settings:", settings);
 
     // Get video duration
-    const duration = await getVideoDuration(fileInput.files[0]);
+    const duration = await getVideoDuration(file);
     if (!duration) {
         alert("Failed to get video duration");
         return;
@@ -299,7 +298,7 @@ compressBtn.addEventListener("click", async () => {
     console.log("Calculated target bitrate (kbps):", targetBitrateKbps);
 
     // Build new file name
-    const inputFileName = fileInput.files[0].name;
+    const inputFileName = file.name;
     const inputBaseName = inputFileName.replace(/\.[^.]+$/, "");
     const outputFileName = `${inputBaseName}_compressed.mp4`;
 
@@ -313,7 +312,7 @@ compressBtn.addEventListener("click", async () => {
     console.log("FFmpeg command:", ffmpegCommand.join(" "));
 
     // Run compression
-    await runCompression(fileInput.files[0], ffmpegCommand, duration);
+    await runCompression(file, ffmpegCommand, inputFileName, outputFileName);
 });
 
 // Reset ui to initial state
