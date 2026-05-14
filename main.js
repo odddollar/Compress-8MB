@@ -16,7 +16,7 @@ const loadedPage = document.getElementById("loaded-page");
 const { createFFmpeg } = FFmpeg;
 const ffmpeg = createFFmpeg({
     corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
-    log: false,
+    log: true,
 });
 
 // Load and show elements when ready
@@ -123,6 +123,7 @@ function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbp
 
     // Build command with codec selection
     const command = [
+        "-hide_banner",
         "-i", inputFileName,
         ...getCodecArgs(settings.codec),
         "-b:v", `${roundedBitrateKbps}k`,
@@ -216,7 +217,6 @@ async function runCompression(inputFile, ffmpegCommand, duration) {
         settingsPane.hidden = true;
         progressPane.hidden = false;
         progressBar.value = 0;
-        progressText.textContent = `Encoding ${outputFileName}: 0%`;
 
         // Write input file to virtual filesystem
         const fileBuffer = await inputFile.arrayBuffer();
@@ -227,7 +227,13 @@ async function runCompression(inputFile, ffmpegCommand, duration) {
             // Use ratio to calculate progress
             const percent = Math.round(data.ratio * 100);
             progressBar.value = percent;
-            progressText.textContent = `Encoding ${outputFileName}: ${percent}%`;
+        });
+
+        // Set up logger to show ffmpeg output
+        ffmpeg.setLogger(({ type, message }) => {
+            if (type === "ffout" || type === "fferr") {
+                progressText.textContent = message;
+            }
         });
 
         // Run ffmpeg
