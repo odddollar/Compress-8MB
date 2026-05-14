@@ -197,6 +197,69 @@ uploadBox.addEventListener("drop", (e) => {
 // Run compression //
 /////////////////////
 
+// Get progress elements
+const progressPane = document.getElementById("progress-pane");
+const progressText = document.getElementById("progress-text");
+const progressBar = document.getElementById("progress-bar");
+const downloadBtn = document.getElementById("download-btn");
+
+// Run ffmpeg command and handle progress
+async function runCompression(inputFile, ffmpegCommand, duration) {
+    const inputFileName = ffmpegCommand[1];
+    const outputFileName = ffmpegCommand[ffmpegCommand.length - 1];
+
+    try {
+        // Show progress section
+        progressPane.hidden = false;
+        downloadBtn.hidden = true;
+        progressText.textContent = "Writing input file...";
+        progressBar.value = 0;
+
+        // Write input file to virtual filesystem
+        const fileBuffer = await inputFile.arrayBuffer();
+        ffmpeg.FS("writeFile", inputFileName, new Uint8Array(fileBuffer));
+
+        // Set up progress callback
+        ffmpeg.setProgress((data) => {
+            // Use ratio to calculate progress
+            const percent = Math.round(data.ratio * 100);
+            progressBar.value = percent;
+            progressText.textContent = `Encoding: ${percent}%`;
+        });
+
+        // Run ffmpeg
+        progressText.textContent = "Running FFmpeg...";
+        await ffmpeg.run(...ffmpegCommand);
+
+        // Update ui after successful encoding
+        progressText.textContent = "Encoding complete!";
+        progressBar.value = 100;
+        downloadBtn.hidden = false;
+
+        // Set up download handler
+        downloadBtn.onclick = () => {
+            const outputData = ffmpeg.FS("readFile", outputFileName);
+            const blob = new Blob([outputData.buffer], { type: "video/mp4" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = outputFileName;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+    } catch (err) {
+        progressText.textContent = `Error: ${err.message}`;
+        progressBar.value = 0;
+        console.error("FFmpeg error:", err);
+    } finally {
+        // Clean up filesystem
+        try {
+            ffmpeg.FS("unlink", inputFileName);
+        } catch (e) { }
+    }
+}
+
+// Compress button handler
 document.getElementById("compress-btn").addEventListener("click", async () => {
     // Check that file selected
     if (fileInput.files.length === 0) {
@@ -237,4 +300,7 @@ document.getElementById("compress-btn").addEventListener("click", async () => {
         settings,
     );
     console.log("FFmpeg command:", ffmpegCommand.join(" "));
+
+    // Run compression
+    await runCompression(fileInput.files[0], ffmpegCommand, duration);
 });
