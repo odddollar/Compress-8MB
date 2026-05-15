@@ -12,17 +12,18 @@ const loadingSpinner = document.getElementById("loading-spinner");
 const loadingError = document.getElementById("loading-error");
 const loadedPage = document.getElementById("loaded-page");
 
-// Pull ffmpeg from cdn
-const { createFFmpeg } = FFmpeg;
-const ffmpeg = createFFmpeg({
-    corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
-    log: true,
-});
+// Pull ffmpeg from included files
+const { FFmpeg } = FFmpegWASM;
+const ffmpeg = new FFmpeg();
 
 // Load and show elements when ready
 (async () => {
     try {
-        await ffmpeg.load();
+        await ffmpeg.load({
+            coreURL: "ffmpeg-core.js",
+            wasmURL: "ffmpeg-core.wasm",
+        });
+
         loadingScreen.hidden = true;
         loadedPage.hidden = false;
     } catch (err) {
@@ -219,24 +220,23 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
 
         // Write input file to virtual filesystem
         const fileBuffer = await inputFile.arrayBuffer();
-        ffmpeg.FS("writeFile", inputFileName, new Uint8Array(fileBuffer));
+        await ffmpeg.writeFile(inputFileName, new Uint8Array(fileBuffer));
 
         // Set up progress callback
-        ffmpeg.setProgress((data) => {
-            // Use ratio to calculate progress
-            const percent = Math.round(data.ratio * 100);
-            progressBar.value = percent;
+        ffmpeg.on("progress", ({ progress }) => {
+            progressBar.value = Math.round(progress * 100);
         });
 
         // Set up logger to show ffmpeg output
-        ffmpeg.setLogger(({ type, message }) => {
-            if ((type === "ffout" || type === "fferr") && /^frame=/.test(message)) {
+        ffmpeg.on("log", ({ message }) => {
+            console.log(message);
+            if (/^frame=/.test(message)) {
                 progressText.textContent = message;
             }
         });
 
         // Run ffmpeg
-        await ffmpeg.run(...ffmpegCommand);
+        await ffmpeg.exec(ffmpegCommand);
 
         // Update ui after successful encoding
         progressText.textContent = "Encoding complete!";
@@ -245,8 +245,8 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
         resetBtn.hidden = false;
 
         // Set up download handler
-        downloadBtn.onclick = () => {
-            const outputData = ffmpeg.FS("readFile", outputFileName);
+        downloadBtn.onclick = async () => {
+            const outputData = await ffmpeg.readFile(outputFileName);
             const blob = new Blob([outputData.buffer], { type: "video/mp4" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -264,7 +264,7 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
     } finally {
         // Clean up filesystem
         try {
-            ffmpeg.FS("unlink", inputFileName);
+            await ffmpeg.deleteFile(inputFileName);
         } catch (e) { }
     }
 }
