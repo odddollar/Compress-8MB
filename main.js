@@ -109,15 +109,37 @@ function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
     return Math.max(50, Math.floor(bitrateKbps));
 }
 
-// Convert codec name to ffmpeg arguments
-function getCodecArgs(codec) {
+// Convert video codec name to ffmpeg arguments
+function getVideoCodecArgs(codec) {
     switch (codec) {
         case "H.264":
             return ["-c:v", "libx264", "-preset", "medium", "-pix_fmt", "yuv420p"];
         case "H.265":
             return ["-c:v", "libx265", "-preset", "medium", "-pix_fmt", "yuv420p10le", "-tag:v", "hvc1"];
-        case "AV1":
-            return ["-c:v", "libaom-av1", "-cpu-used", "4", "-pix_fmt", "yuv420p"];
+        case "VP9":
+            return ["-c:v", "libvpx-vp9", "-deadline", "good", "-cpu-used", "2", "-pix_fmt", "yuv420p"];
+    }
+}
+
+// Convert video codec name to appropriate audio arguments
+function getAudioCodecArgs(codec) {
+    switch (codec) {
+        case "H.264":
+        case "H.265":
+            return ["-c:a", "aac", "-b:a", `${AUDIO_BITRATE_KBPS}k`];
+        case "VP9":
+            return ["-c:a", "libopus", "-b:a", `${AUDIO_BITRATE_KBPS}k`];
+    }
+}
+
+// Convert video codec name to appropriate container
+function getOutputExtension(codec) {
+    switch (codec) {
+        case "H.264":
+        case "H.265":
+            return "mp4";
+        case "VP9":
+            return "webm";
     }
 }
 
@@ -127,7 +149,7 @@ function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbp
     const command = [
         "-hide_banner",
         "-i", inputFileName,
-        ...getCodecArgs(settings.codec),
+        ...getVideoCodecArgs(settings.codec),
         "-b:v", `${targetBitrateKbps}k`,
     ];
 
@@ -138,7 +160,7 @@ function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbp
 
     // Transcode audio if included, discard if not
     if (settings.includeAudio) {
-        command.push("-c:a", "aac", "-b:a", `${AUDIO_BITRATE_KBPS}k`);
+        command.push(...getAudioCodecArgs(settings.codec));
     } else {
         command.push("-an");
     }
@@ -301,7 +323,7 @@ compressBtn.addEventListener("click", async () => {
     // Build new file name
     const inputFileName = file.name;
     const inputBaseName = inputFileName.replace(/\.[^.]+$/, "");
-    const outputFileName = `${inputBaseName}_compressed.mp4`;
+    const outputFileName = `${inputBaseName}_compressed.${getOutputExtension(settings.codec)}`;
 
     // Build ffmpeg command
     const ffmpegCommand = buildCompressionCommand(
