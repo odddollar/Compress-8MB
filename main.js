@@ -23,9 +23,9 @@ const ffmpeg = new FFmpeg();
 (async () => {
     try {
         await ffmpeg.load({
-            coreURL: "ffmpeg-core.js",
-            wasmURL: "ffmpeg-core.wasm",
-            workerURL: "ffmpeg-core.worker.js"
+            coreURL: "./ffmpeg-core.js",
+            wasmURL: "./ffmpeg-core.wasm",
+            workerURL: "./ffmpeg-core.worker.js"
         });
 
         loadingScreen.hidden = true;
