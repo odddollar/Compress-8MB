@@ -22,6 +22,7 @@ const ffmpeg = new FFmpeg();
         await ffmpeg.load({
             coreURL: "ffmpeg-core.js",
             wasmURL: "ffmpeg-core.wasm",
+            workerURL: "ffmpeg-core.worker.js"
         });
 
         loadingScreen.hidden = true;
@@ -112,11 +113,11 @@ function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
 // Convert video codec name to ffmpeg arguments
 function getVideoCodecArgs(codec) {
     switch (codec) {
-        case "H.264":
+        case "H.264/AAC":
             return ["-c:v", "libx264", "-preset", "medium", "-pix_fmt", "yuv420p"];
-        case "H.265":
+        case "H.265/AAC":
             return ["-c:v", "libx265", "-preset", "medium", "-pix_fmt", "yuv420p10le", "-tag:v", "hvc1"];
-        case "VP9":
+        case "VP9/OPUS":
             return ["-c:v", "libvpx-vp9", "-deadline", "good", "-cpu-used", "2", "-pix_fmt", "yuv420p"];
     }
 }
@@ -124,10 +125,10 @@ function getVideoCodecArgs(codec) {
 // Convert video codec name to appropriate audio arguments
 function getAudioCodecArgs(codec) {
     switch (codec) {
-        case "H.264":
-        case "H.265":
+        case "H.264/AAC":
+        case "H.265/AAC":
             return ["-c:a", "aac", "-b:a", `${AUDIO_BITRATE_KBPS}k`];
-        case "VP9":
+        case "VP9/OPUS":
             return ["-c:a", "libopus", "-b:a", `${AUDIO_BITRATE_KBPS}k`];
     }
 }
@@ -135,10 +136,10 @@ function getAudioCodecArgs(codec) {
 // Convert video codec name to appropriate container
 function getOutputExtension(codec) {
     switch (codec) {
-        case "H.264":
-        case "H.265":
+        case "H.264/AAC":
+        case "H.265/AAC":
             return "mp4";
-        case "VP9":
+        case "VP9/OPUS":
             return "webm";
     }
 }
