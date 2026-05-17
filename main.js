@@ -2,6 +2,9 @@
 
 const AUDIO_BITRATE_KBPS = 96;
 
+// Allows clearing encoded file on reset
+let currentOutputFileName = null;
+
 ////////////////////
 // FFmpeg loading //
 ////////////////////
@@ -166,8 +169,12 @@ function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbp
         command.push("-an");
     }
 
-    // Optimise for streaming
-    command.push("-movflags", "+faststart", outputFileName);
+    // Optimise for streaming with mp4
+    if (outputFileName.endsWith("mp4")) {
+        command.push("-movflags", "+faststart", outputFileName);
+    } else {
+        command.push(outputFileName);
+    }
 
     return command;
 }
@@ -234,6 +241,19 @@ const resetBtn = document.getElementById("reset-btn");
 
 // Run ffmpeg command and handle progress
 async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFileName) {
+    // Set up progress callback
+    const progressHandler = ({ progress }) => {
+        progressBar.value = Math.round(progress * 100);
+    };
+
+    // Set up logger to show ffmpeg output
+    const logHandler = ({ message }) => {
+        console.log(message);
+        if (/^frame=/.test(message)) {
+            progressText.textContent = message;
+        }
+    };
+
     try {
         // Switch visible sections
         settingsPane.hidden = true;
@@ -245,18 +265,8 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
         const fileBuffer = await inputFile.arrayBuffer();
         await ffmpeg.writeFile(inputFileName, new Uint8Array(fileBuffer));
 
-        // Set up progress callback
-        ffmpeg.on("progress", ({ progress }) => {
-            progressBar.value = Math.round(progress * 100);
-        });
-
-        // Set up logger to show ffmpeg output
-        ffmpeg.on("log", ({ message }) => {
-            console.log(message);
-            if (/^frame=/.test(message)) {
-                progressText.textContent = message;
-            }
-        });
+        ffmpeg.on("progress", progressHandler);
+        ffmpeg.on("log", logHandler);
 
         // Run ffmpeg
         await ffmpeg.exec(ffmpegCommand);
@@ -266,11 +276,13 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
         progressBar.value = 100;
         downloadBtn.hidden = false;
         resetBtn.hidden = false;
+        currentOutputFileName = outputFileName;
 
         // Set up download handler
         downloadBtn.onclick = async () => {
             const outputData = await ffmpeg.readFile(outputFileName);
-            const blob = new Blob([outputData.buffer], { type: "video/mp4" });
+            const mimeType = outputFileName.endsWith("mp4") ? "video/mp4" : "video/webm";
+            const blob = new Blob([outputData.buffer], { type: mimeType });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -289,6 +301,10 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
         try {
             await ffmpeg.deleteFile(inputFileName);
         } catch (e) { }
+
+        // Remove event listeners
+        ffmpeg.off("progress", progressHandler);
+        ffmpeg.off("log", logHandler);
     }
 }
 
@@ -340,7 +356,15 @@ compressBtn.addEventListener("click", async () => {
 });
 
 // Reset ui to initial state
-resetBtn.addEventListener("click", () => {
+resetBtn.addEventListener("click", async () => {
+    // Delete previous output file from ffmpeg filesystem
+    if (currentOutputFileName) {
+        try {
+            await ffmpeg.deleteFile(currentOutputFileName);
+        } catch (e) {}
+        currentOutputFileName = null;
+    }
+
     // Hide progress pane, show settings
     settingsPane.hidden = false;
     progressPane.hidden = true;
