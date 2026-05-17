@@ -74,7 +74,7 @@ function getCompressionSettings() {
     return { codec, targetSizeMB: targetSizeRaw, frameRate, includeAudio };
 }
 
-// Get duration of vide object using temporary object URL
+// Get duration of video object using temporary object URL
 function getVideoDuration(file) {
     return new Promise((resolve) => {
         const url = URL.createObjectURL(file);
@@ -94,7 +94,7 @@ function getVideoDuration(file) {
 
 // Calculate video bitrate for target size account for audio
 function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
-    const kbitsPerMB = 8000;
+    const kbitsPerMB = 8192;
     let videoDesiredSizeMB;
 
     if (includeAudio) {
@@ -116,34 +116,10 @@ function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
 // Convert video codec name to ffmpeg arguments
 function getVideoCodecArgs(codec) {
     switch (codec) {
-        case "H.264/AAC":
+        case "H.264":
             return ["-c:v", "libx264", "-preset", "medium", "-pix_fmt", "yuv420p"];
-        case "H.265/AAC":
+        case "H.265":
             return ["-c:v", "libx265", "-preset", "medium", "-pix_fmt", "yuv420p10le", "-tag:v", "hvc1"];
-        case "VP9/OPUS":
-            return ["-c:v", "libvpx-vp9", "-deadline", "good", "-cpu-used", "2", "-pix_fmt", "yuv420p"];
-    }
-}
-
-// Convert video codec name to appropriate audio arguments
-function getAudioCodecArgs(codec) {
-    switch (codec) {
-        case "H.264/AAC":
-        case "H.265/AAC":
-            return ["-c:a", "aac", "-b:a", `${AUDIO_BITRATE_KBPS}k`];
-        case "VP9/OPUS":
-            return ["-c:a", "libopus", "-b:a", `${AUDIO_BITRATE_KBPS}k`];
-    }
-}
-
-// Convert video codec name to appropriate container
-function getOutputExtension(codec) {
-    switch (codec) {
-        case "H.264/AAC":
-        case "H.265/AAC":
-            return "mp4";
-        case "VP9/OPUS":
-            return "webm";
     }
 }
 
@@ -164,17 +140,13 @@ function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbp
 
     // Transcode audio if included, discard if not
     if (settings.includeAudio) {
-        command.push(...getAudioCodecArgs(settings.codec));
+        command.push("-c:a", "aac", "-b:a", `${AUDIO_BITRATE_KBPS}k`);
     } else {
         command.push("-an");
     }
 
-    // Optimise for streaming with mp4
-    if (outputFileName.endsWith("mp4")) {
-        command.push("-movflags", "+faststart", outputFileName);
-    } else {
-        command.push(outputFileName);
-    }
+    // Optimise for streaming
+    command.push("-movflags", "+faststart", outputFileName);
 
     return command;
 }
@@ -248,7 +220,6 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
 
     // Set up logger to show ffmpeg output
     const logHandler = ({ message }) => {
-        console.log(message);
         if (/^frame=/.test(message)) {
             progressText.textContent = message;
         }
@@ -281,8 +252,7 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
         // Set up download handler
         downloadBtn.onclick = async () => {
             const outputData = await ffmpeg.readFile(outputFileName);
-            const mimeType = outputFileName.endsWith("mp4") ? "video/mp4" : "video/webm";
-            const blob = new Blob([outputData.buffer], { type: mimeType });
+            const blob = new Blob([outputData.buffer], { type: "video/mp4" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -340,7 +310,7 @@ compressBtn.addEventListener("click", async () => {
     // Build new file name
     const inputFileName = file.name;
     const inputBaseName = inputFileName.replace(/\.[^.]+$/, "");
-    const outputFileName = `${inputBaseName}_compressed.${getOutputExtension(settings.codec)}`;
+    const outputFileName = `${inputBaseName}_compressed.mp4`;
 
     // Build ffmpeg command
     const ffmpegCommand = buildCompressionCommand(
@@ -361,7 +331,7 @@ resetBtn.addEventListener("click", async () => {
     if (currentOutputFileName) {
         try {
             await ffmpeg.deleteFile(currentOutputFileName);
-        } catch (e) {}
+        } catch (e) { }
         currentOutputFileName = null;
     }
 
