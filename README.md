@@ -55,6 +55,7 @@ Compress-8MB/
 ├── .gitignore
 ├── coi-serviceworker.min.js
 ├── index.html
+├── LICENSE
 ├── main.js
 ├── README.md
 └── styles.css
