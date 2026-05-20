@@ -1,1 +1,3 @@
 *.txt
+ffmpeg/
+coi-serviceworker.min.js
