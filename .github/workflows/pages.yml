@@ -1,0 +1,79 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare site and dependencies
+        run: |
+          mkdir -p dist
+          mkdir -p dist/ffmpeg
+
+          # Copy project files into deployment directory
+          rsync -av \
+            --exclude "dist" \
+            --exclude ".git" \
+            --exclude ".gitignore" \
+            --exclude ".github" \
+            --exclude "*.md" \
+            ./ dist/
+
+          # Download coi service worker
+          curl -L \
+            https://unpkg.com/coi-serviceworker@0.1.7/coi-serviceworker.min.js \
+            -o dist/coi-serviceworker.min.js
+
+          # Download ffmpeg assets
+          curl -L \
+            https://unpkg.com/@ffmpeg/core-mt@0.12.10/dist/umd/ffmpeg-core.js \
+            -o dist/ffmpeg/ffmpeg-core.js
+
+          curl -L \
+            https://unpkg.com/@ffmpeg/core-mt@0.12.10/dist/umd/ffmpeg-core.wasm \
+            -o dist/ffmpeg/ffmpeg-core.wasm
+
+          curl -L \
+            https://unpkg.com/@ffmpeg/core-mt@0.12.10/dist/umd/ffmpeg-core.worker.js \
+            -o dist/ffmpeg/ffmpeg-core.worker.js
+
+          curl -L \
+            https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js \
+            -o dist/ffmpeg/ffmpeg.js
+
+          curl -L \
+            https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd/814.ffmpeg.js \
+            -o dist/ffmpeg/814.ffmpeg.js
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
