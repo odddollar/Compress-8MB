@@ -33,11 +33,10 @@ jobs:
 
           # Copy project files into deployment directory
           rsync -av \
-            --exclude "dist" \
-            --exclude ".git" \
-            --exclude ".gitignore" \
-            --exclude ".github" \
-            --exclude "*.md" \
+            --include "index.html" \
+            --include "main.js" \
+            --include "styles.css" \
+            --exclude "*" \
             ./ dist/
 
           # Download coi service worker
