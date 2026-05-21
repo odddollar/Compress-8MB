@@ -52,12 +52,9 @@ Compress-8MB/
 │   ├── ffmpeg-core.wasm
 │   ├── ffmpeg-core.worker.js
 │   └── ffmpeg.js
-├── .gitignore
 ├── coi-serviceworker.min.js
 ├── index.html
-├── LICENSE
 ├── main.js
-├── README.md
 └── styles.css
 ```
 
