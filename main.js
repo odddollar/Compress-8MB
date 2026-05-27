@@ -70,10 +70,14 @@ function getCompressionSettings() {
     const frameRateRaw = document.getElementById("frame-rate").value;
     const frameRate = frameRateRaw === "Same as source" ? -1 : parseInt(frameRateRaw, 10);
 
+    // Get resolution
+    const resolutionRaw = document.getElementById("resolution").value;
+    const resolution = resolutionRaw === "Same as source" ? -1 : resolutionRaw;
+
     // Get audio inclusion
     const includeAudio = document.getElementById("include-audio").checked;
 
-    return { codec, targetSizeMB: targetSizeRaw, frameRate, includeAudio };
+    return { codec, targetSizeMB: targetSizeRaw, frameRate, resolution, includeAudio };
 }
 
 // Get duration of video object using temporary object URL
@@ -148,6 +152,11 @@ function buildCompressionCommand(inputFileName, outputFileName, videoBitrateKbps
     // Set frame rate if specified
     if (settings.frameRate > 0) {
         command.push("-r", String(settings.frameRate));
+    }
+
+    // Set resolution if specified
+    if (settings.resolution > 0) {
+        command.push("-vf", `scale=${settings.resolution}`);
     }
 
     // Transcode audio if included, discard if not

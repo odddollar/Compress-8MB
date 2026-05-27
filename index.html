@@ -66,8 +66,8 @@
             <!-- Output frame rate -->
             <div>
                 <label for="frame-rate">Frame Rate</label>
-                <div class="frame-rate-group">
-                    <select id="frame-rate" class="frame-rate-select">
+                <div class="dropdown-selection-group">
+                    <select id="frame-rate" class="dropdown-select">
                         <option selected>Same as source</option>
                         <option>24</option>
                         <option>30</option>
@@ -75,6 +75,19 @@
                     </select>
                     <span>FPS</span>
                 </div>
+            </div>
+
+            <!-- Output resolution -->
+            <div>
+                <label for="resolution">Resolution</label>
+                <select id="resolution" class="dropdown-select">
+                    <option selected>Same as source</option>
+                    <option>640x480</option>
+                    <option>1280x720</option>
+                    <option>1920x1080</option>
+                    <option>2560x1440</option>
+                    <option>3840x2160</option>
+                </select>
             </div>
 
             <!-- Include audio -->
