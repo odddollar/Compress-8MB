@@ -1,6 +1,8 @@
 "use strict";
 
-const AUDIO_BITRATE_KBPS = 96;
+const CONTAINER_OVERHEAD_PERCENT = 0.05;
+const AUDIO_SIZE_PERCENT = 0.15;
+const KBITS_PER_MB = 8192;
 
 // Allows clearing encoded file on reset
 let currentOutputFileName = null;
@@ -92,25 +94,35 @@ function getVideoDuration(file) {
     });
 }
 
-// Calculate video bitrate for target size account for audio
-function calculateBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
-    const kbitsPerMB = 8192;
+// Calculate video bitrate for target size accounting for audio
+function calculateVideoBitrateKbps(durationSeconds, desiredSizeMB, includeAudio) {
     let videoDesiredSizeMB;
 
     if (includeAudio) {
         // Subtract audio size to get remaining size for video
-        const audioSizeMB = (AUDIO_BITRATE_KBPS * durationSeconds) / kbitsPerMB;
+        const audioSizeMB = desiredSizeMB * AUDIO_SIZE_PERCENT;
         const remainingSizeMB = desiredSizeMB - audioSizeMB;
-        videoDesiredSizeMB = remainingSizeMB * 0.95;
+        videoDesiredSizeMB = remainingSizeMB * (1 - CONTAINER_OVERHEAD_PERCENT);
     } else {
-        videoDesiredSizeMB = desiredSizeMB * 0.95;
+        videoDesiredSizeMB = desiredSizeMB * (1 - CONTAINER_OVERHEAD_PERCENT);
     }
 
     // Calculate bitrate
-    const bitrateKbps = (videoDesiredSizeMB * kbitsPerMB) / durationSeconds
+    const videoBitrateKbps = (videoDesiredSizeMB * KBITS_PER_MB) / durationSeconds;
 
     // Clamp video bitrate to avoid nonsense values
-    return Math.max(50, Math.floor(bitrateKbps));
+    return Math.max(50, Math.floor(videoBitrateKbps));
+}
+
+// Calculate audio bitrate for target size
+function calculateAudioBitrateKbps(durationSeconds, desiredSizeMB) {
+    const audioSizeMB = desiredSizeMB * AUDIO_SIZE_PERCENT;
+
+    // Calculate bitrate
+    const audioBitrateKbps = (audioSizeMB * KBITS_PER_MB) / durationSeconds;
+
+    // Clamp audio bitrate to avoid nonsense values
+    return Math.max(16, Math.floor(audioBitrateKbps));
 }
 
 // Convert video codec name to ffmpeg arguments
@@ -124,13 +136,13 @@ function getVideoCodecArgs(codec) {
 }
 
 // Build ffmpeg command based on settings
-function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbps, settings) {
+function buildCompressionCommand(inputFileName, outputFileName, videoBitrateKbps, audioBitrateKbps, settings) {
     // Build command with codec selection
     const command = [
         "-hide_banner",
         "-i", inputFileName,
         ...getVideoCodecArgs(settings.codec),
-        "-b:v", `${targetBitrateKbps}k`,
+        "-b:v", `${videoBitrateKbps}k`,
     ];
 
     // Set frame rate if specified
@@ -140,7 +152,7 @@ function buildCompressionCommand(inputFileName, outputFileName, targetBitrateKbp
 
     // Transcode audio if included, discard if not
     if (settings.includeAudio) {
-        command.push("-c:a", "aac", "-b:a", `${AUDIO_BITRATE_KBPS}k`);
+        command.push("-c:a", "aac", "-b:a", `${audioBitrateKbps}k`);
     } else {
         command.push("-an");
     }
@@ -303,9 +315,11 @@ compressBtn.addEventListener("click", async () => {
     }
     console.log("Video duration (seconds):", duration);
 
-    // Calculate target bitrate
-    const targetBitrateKbps = calculateBitrateKbps(duration, settings.targetSizeMB, settings.includeAudio);
-    console.log("Calculated target bitrate (kbps):", targetBitrateKbps);
+    // Calculate target bitrates
+    const videoBitrateKbps = calculateVideoBitrateKbps(duration, settings.targetSizeMB, settings.includeAudio);
+    const audioBitrateKbps = settings.includeAudio ? calculateAudioBitrateKbps(duration, settings.targetSizeMB) : 0;
+    console.log("Calculated target video bitrate (kbps):", videoBitrateKbps);
+    if (settings.includeAudio) console.log("Calculated target audio bitrate (kbps):", audioBitrateKbps);
 
     // Build new file name
     const inputFileName = file.name;
@@ -316,7 +330,8 @@ compressBtn.addEventListener("click", async () => {
     const ffmpegCommand = buildCompressionCommand(
         inputFileName,
         outputFileName,
-        targetBitrateKbps,
+        videoBitrateKbps,
+        audioBitrateKbps,
         settings,
     );
     console.log("FFmpeg command:", ffmpegCommand.join(" "));
