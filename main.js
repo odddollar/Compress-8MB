@@ -7,36 +7,18 @@ const KBITS_PER_MB = 8192;
 // Allows clearing encoded file on reset
 let currentOutputFileName = null;
 
-////////////////////
-// FFmpeg loading //
-////////////////////
+//////////////////////
+// Mediabunny setup //
+//////////////////////
 
-// Get elements
-const loadingScreen = document.getElementById("loading-screen");
-const loadingSpinner = document.getElementById("loading-spinner");
-const loadingError = document.getElementById("loading-error");
-const loadedPage = document.getElementById("loaded-page");
+// Import required mediabunny classes
+const { ALL_FORMATS, BlobSource, BufferTarget, Conversion, Input, Mp4OutputFormat, Output } = Mediabunny;
+const { registerAacEncoder } = MediabunnyAacEncoder;
+const { registerAc3Decoder } = MediabunnyAc3;
 
-// Pull ffmpeg from included files
-const { FFmpeg } = FFmpegWASM;
-const ffmpeg = new FFmpeg();
-
-// Load and show elements when ready
-(async () => {
-    try {
-        await ffmpeg.load({
-            coreURL: "./ffmpeg-core.js",
-            wasmURL: "./ffmpeg-core.wasm",
-            workerURL: "./ffmpeg-core.worker.js"
-        });
-
-        loadingScreen.hidden = true;
-        loadedPage.hidden = false;
-    } catch (err) {
-        loadingSpinner.hidden = true;
-        loadingError.textContent = `Failed to load FFmpeg: ${err.message ?? err}`;
-    }
-})();
+// Allow additional audio codecs
+registerAacEncoder();
+registerAc3Decoder();
 
 /////////////////
 // Ui updating //
