@@ -224,9 +224,10 @@ async function runCompression(file, settings, videoTargetBitrateKbps, audioTarge
 
         // Set resolution if specified
         if (settings.resolution) {
-            res = getVideoResolution(settings.resolution);
+            const res = getVideoResolution(settings.resolution);
             videoOptions.width = res.width;
             videoOptions.height = res.height;
+            videoOptions.fit = "contain";
         }
 
         // Transcode audio if included, discard if not
@@ -309,40 +310,22 @@ compressBtn.addEventListener("click", async () => {
     console.log("Video duration (seconds):", duration);
 
     // Calculate target bitrates
-    const videoBitrateKbps = calculateVideoBitrateKbps(duration, settings.targetSizeMB, settings.includeAudio);
-    const audioBitrateKbps = settings.includeAudio ? calculateAudioBitrateKbps(duration, settings.targetSizeMB) : 0;
-    console.log("Calculated target video bitrate (kbps):", videoBitrateKbps);
-    if (settings.includeAudio) console.log("Calculated target audio bitrate (kbps):", audioBitrateKbps);
+    const videoTargetBitrateKbps = calculateVideoBitrateKbps(duration, settings.targetSizeMB, settings.includeAudio);
+    const audioTargetBitrateKbps = settings.includeAudio ? calculateAudioBitrateKbps(duration, settings.targetSizeMB) : 0;
+    console.log("Calculated video bitrate (kbps):", videoTargetBitrateKbps);
+    if (settings.includeAudio) console.log("Calculated audio bitrate (kbps):", audioTargetBitrateKbps);
 
     // Build new file name
     const inputFileName = file.name;
     const inputBaseName = inputFileName.replace(/\.[^.]+$/, "");
     const outputFileName = `${inputBaseName}_compressed.mp4`;
 
-    // Build ffmpeg command
-    const ffmpegCommand = buildCompressionCommand(
-        inputFileName,
-        outputFileName,
-        videoBitrateKbps,
-        audioBitrateKbps,
-        settings,
-    );
-    console.log("FFmpeg command:", ffmpegCommand.join(" "));
-
     // Run compression
-    await runCompression(file, ffmpegCommand, inputFileName, outputFileName);
+    await runCompression(file, settings, videoTargetBitrateKbps, audioTargetBitrateKbps, outputFileName);
 });
 
 // Reset ui to initial state
 resetBtn.addEventListener("click", async () => {
-    // Delete previous output file from ffmpeg filesystem
-    if (currentOutputFileName) {
-        try {
-            await ffmpeg.deleteFile(currentOutputFileName);
-        } catch (e) { }
-        currentOutputFileName = null;
-    }
-
     // Hide progress pane, show settings
     settingsPane.hidden = false;
     progressPane.hidden = true;
@@ -366,5 +349,6 @@ resetBtn.addEventListener("click", async () => {
     // Reset target size, frame rate, and audio toggle to defaults
     document.getElementById("target-size").value = 8;
     document.getElementById("frame-rate").value = "Same as source";
+    document.getElementById("resolution").value = "Same as source";
     document.getElementById("include-audio").checked = true;
 });
