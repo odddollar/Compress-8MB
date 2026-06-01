@@ -62,22 +62,19 @@ function getCompressionSettings() {
     return { codec, targetSizeMB: targetSizeRaw, frameRate, resolution, includeAudio };
 }
 
-// Get duration of video object using temporary object URL
-function getVideoDuration(file) {
-    return new Promise((resolve) => {
-        const url = URL.createObjectURL(file);
-        const video = document.createElement("video");
-        video.preload = "metadata";
-        video.onloadedmetadata = () => {
-            URL.revokeObjectURL(url);
-            resolve(video.duration);
-        };
-        video.onerror = () => {
-            URL.revokeObjectURL(url);
-            resolve(null);
-        };
-        video.src = url;
+// Get duration of video file
+async function getVideoDuration(file) {
+    const input = new Input({
+        formats: ALL_FORMATS,
+        source: new BlobSource(file),
     });
+    try {
+        return await input.computeDuration();
+    } catch {
+        return null;
+    } finally {
+        input.dispose();
+    }
 }
 
 // Calculate video bitrate for target size accounting for audio
