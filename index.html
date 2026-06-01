@@ -14,120 +14,110 @@
 </head>
 
 <body>
-    <!-- Loading spinner -->
-    <article id="loading-screen" class="container center space-elements">
-        <span id="loading-spinner" aria-busy="true">Loading FFmpeg WASM</span>
-        <span id="loading-error"></span>
+    <!-- Title header -->
+    <article class="container center space-elements">
+        <h1>Compress 8MB</h1>
+        <p>Compress videos for upload-limited platforms</p>
     </article>
 
-    <!-- Main page elements -->
-    <div id="loaded-page" hidden>
-        <!-- Title header -->
-        <article class="container center space-elements">
-            <h1>Compress 8MB</h1>
-            <p>Compress videos for upload-limited platforms</p>
-        </article>
-
-        <!-- Main body -->
-        <article id="settings-pane" class="container space-elements">
-            <!-- Drag and drop file selection box -->
-            <div>
-                <label for="upload-box">Video File</label>
-                <div id="upload-box" class="center upload-box">
-                    <i class="fa fa-video-camera"></i>
-                    <span id="upload-text">Click to choose a video file, or drag one here</span>
-                </div>
-                <input id="file-input" type="file" accept="video/*" hidden>
+    <!-- Main body -->
+    <article id="settings-pane" class="container space-elements">
+        <!-- Drag and drop file selection box -->
+        <div>
+            <label for="upload-box">Video File</label>
+            <div id="upload-box" class="center upload-box">
+                <i class="fa fa-video-camera"></i>
+                <span id="upload-text">Click to choose a video file, or drag one here</span>
             </div>
+            <input id="file-input" type="file" accept="video/*" hidden>
+        </div>
 
-            <!-- Codec selection for compression -->
-            <div>
-                <label for="codec-grid">Video Codec</label>
-                <div id="codec-grid" class="codec-grid center">
-                    <div class="codec-card active">
-                        <strong>H.264</strong>
-                        <small>Better compatibility. Faster</small>
-                    </div>
-                    <div class="codec-card">
-                        <strong>H.265</strong>
-                        <small>Better image quality</small>
-                    </div>
+        <!-- Codec selection for compression -->
+        <div>
+            <label for="codec-grid">Video Codec</label>
+            <div id="codec-grid" class="codec-grid center">
+                <div class="codec-card active">
+                    <strong>H.264</strong>
+                    <small>Better compatibility. Faster</small>
+                </div>
+                <div class="codec-card">
+                    <strong>H.265</strong>
+                    <small>Better image quality</small>
                 </div>
             </div>
+        </div>
 
-            <!-- Target file size -->
-            <div>
-                <label for="target-size">Target File Size</label>
-                <div class="target-size-group">
-                    <input id="target-size" class="target-size-input" type="number" min="1" max="500" step="1"
-                        value="8">
-                    <span>MB</span>
-                </div>
+        <!-- Target file size -->
+        <div>
+            <label for="target-size">Target File Size</label>
+            <div class="target-size-group">
+                <input id="target-size" class="target-size-input" type="number" min="1" max="500" step="1" value="8">
+                <span>MB</span>
             </div>
+        </div>
 
-            <!-- Output frame rate -->
-            <div>
-                <label for="frame-rate">Frame Rate</label>
-                <div class="dropdown-selection-group">
-                    <select id="frame-rate" class="dropdown-select">
-                        <option selected>Same as source</option>
-                        <option>24</option>
-                        <option>30</option>
-                        <option>60</option>
-                    </select>
-                    <span>FPS</span>
-                </div>
-            </div>
-
-            <!-- Output resolution -->
-            <div>
-                <label for="resolution">Resolution</label>
-                <select id="resolution" class="dropdown-select">
+        <!-- Output frame rate -->
+        <div>
+            <label for="frame-rate">Frame Rate</label>
+            <div class="dropdown-selection-group">
+                <select id="frame-rate" class="dropdown-select">
                     <option selected>Same as source</option>
-                    <option>640x480</option>
-                    <option>1280x720</option>
-                    <option>1920x1080</option>
-                    <option>2560x1440</option>
-                    <option>3840x2160</option>
+                    <option>24</option>
+                    <option>30</option>
+                    <option>60</option>
                 </select>
+                <span>FPS</span>
             </div>
+        </div>
 
-            <!-- Include audio -->
-            <div>
-                <input id="include-audio" type="checkbox" checked>
-                <label for="include-audio">Include Audio</label>
-            </div>
+        <!-- Output resolution -->
+        <div>
+            <label for="resolution">Resolution</label>
+            <select id="resolution" class="dropdown-select">
+                <option selected>Same as source</option>
+                <option>640x480</option>
+                <option>1280x720</option>
+                <option>1920x1080</option>
+                <option>2560x1440</option>
+                <option>3840x2160</option>
+            </select>
+        </div>
 
-            <!-- Compress video -->
-            <div>
-                <button id="compress-btn" class="full-width">
-                    <i class="fa fa-compress"></i> Compress Video
-                </button>
-            </div>
-        </article>
+        <!-- Include audio -->
+        <div>
+            <input id="include-audio" type="checkbox" checked>
+            <label for="include-audio">Include Audio</label>
+        </div>
 
-        <!-- Progress and download -->
-        <article id="progress-pane" class="container space-elements" hidden>
-            <p id="progress-text"></p>
-            <progress id="progress-bar" class="progress-bar full-width" max="100" value="0"></progress>
-            <button id="download-btn" class="full-width" hidden>
-                <i class="fa fa-download"></i> Download Compressed Video
+        <!-- Compress video -->
+        <div>
+            <button id="compress-btn" class="full-width">
+                <i class="fa fa-compress"></i> Compress Video
             </button>
-            <button id="reset-btn" class="secondary full-width" hidden>
-                <i class="fa fa-refresh"></i> Compress Another Video
-            </button>
-        </article>
+        </div>
+    </article>
 
-        <!-- Footer -->
-        <article class="container center">
-            <small>All files processed client-side with no server uploads</small><br>
-            <small>
-                Made with ❤️ and <a href="https://github.com/ffmpegwasm/ffmpeg.wasm">FFmpeg.wasm</a>.
-                Source available on
-                <a href="https://github.com/odddollar/Compress-8MB"> <i class="fa fa-github"></i> GitHub </a>
-            </small>
-        </article>
-    </div>
+    <!-- Progress and download -->
+    <article id="progress-pane" class="container space-elements" hidden>
+        <p id="progress-text"></p>
+        <progress id="progress-bar" class="progress-bar full-width" max="100" value="0"></progress>
+        <button id="download-btn" class="full-width" hidden>
+            <i class="fa fa-download"></i> Download Compressed Video
+        </button>
+        <button id="reset-btn" class="secondary full-width" hidden>
+            <i class="fa fa-refresh"></i> Compress Another Video
+        </button>
+    </article>
+
+    <!-- Footer -->
+    <article class="container center">
+        <small>All files processed client-side with no server uploads</small><br>
+        <small>
+            Made with ❤️ and <a href="https://github.com/ffmpegwasm/ffmpeg.wasm">FFmpeg.wasm</a>.
+            Source available on
+            <a href="https://github.com/odddollar/Compress-8MB"> <i class="fa fa-github"></i> GitHub </a>
+        </small>
+    </article>
 
     <script src="./main.js"></script>
 </body>
