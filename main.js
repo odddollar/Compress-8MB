@@ -108,47 +108,26 @@ function calculateAudioBitrateKbps(durationSeconds, desiredSizeMB) {
     return Math.max(16, Math.floor(audioBitrateKbps));
 }
 
-// Convert video codec name to ffmpeg arguments
-function getVideoCodecArgs(codec) {
+// Convert codec name to mediabunny video codec string
+function getVideoCodec(codec) {
     switch (codec) {
-        case "H.264":
-            return ["-c:v", "libx264", "-preset", "medium", "-pix_fmt", "yuv420p"];
-        case "H.265":
-            return ["-c:v", "libx265", "-preset", "medium", "-pix_fmt", "yuv420p10le", "-tag:v", "hvc1"];
+        case "H.264": return "avc";
+        case "H.265": return "hevc";
     }
 }
 
-// Build ffmpeg command based on settings
-function buildCompressionCommand(inputFileName, outputFileName, videoBitrateKbps, audioBitrateKbps, settings) {
-    // Build command with codec selection
-    const command = [
-        "-hide_banner",
-        "-i", inputFileName,
-        ...getVideoCodecArgs(settings.codec),
-        "-b:v", `${videoBitrateKbps}k`,
-    ];
-
-    // Set frame rate if specified
-    if (settings.frameRate) {
-        command.push("-r", String(settings.frameRate));
+// Convert codec name to mediabunny audio codec string
+function getAudioCodec(codec) {
+    switch (codec) {
+        case "H.264": return "aac";
+        case "H.265": return "aac";
     }
+}
 
-    // Set resolution if specified
-    if (settings.resolution) {
-        command.push("-vf", `scale=${settings.resolution}`);
-    }
-
-    // Transcode audio if included, discard if not
-    if (settings.includeAudio) {
-        command.push("-c:a", "aac", "-b:a", `${audioBitrateKbps}k`);
-    } else {
-        command.push("-an");
-    }
-
-    // Optimise for streaming
-    command.push("-movflags", "+faststart", outputFileName);
-
-    return command;
+// Convert resolution string to width and height
+function getVideoResolution(resolution) {
+    const [width, height] = resolution.split("x").map(Number);
+    return { width, height };
 }
 
 //////////////////////////
@@ -211,48 +190,82 @@ const progressBar = document.getElementById("progress-bar");
 const downloadBtn = document.getElementById("download-btn");
 const resetBtn = document.getElementById("reset-btn");
 
-// Run ffmpeg command and handle progress
-async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFileName) {
-    // Set up progress callback
-    const progressHandler = ({ progress }) => {
-        progressBar.value = Math.round(progress * 100);
-    };
+// Run conversion and handle progress
+async function runCompression(file, settings, videoTargetBitrateKbps, audioTargetBitrateKbps, outputFileName) {
+    // Switch visible sections
+    settingsPane.hidden = true;
+    progressPane.hidden = false;
+    progressText.textContent = "Starting...";
+    progressBar.value = 0;
 
-    // Set up logger to show ffmpeg output
-    const logHandler = ({ message }) => {
-        if (/^frame=/.test(message)) {
-            progressText.textContent = message;
-        }
-    };
+    // Set up input from uploaded file
+    const input = new Input({
+        formats: ALL_FORMATS,
+        source: new BlobSource(file),
+    });
+
+    // Set up output to in-memory buffer
+    const output = new Output({
+        format: new Mp4OutputFormat(),
+        target: new BufferTarget(),
+    });
 
     try {
-        // Switch visible sections
-        settingsPane.hidden = true;
-        progressPane.hidden = false;
-        progressText.textContent = "Starting...";
-        progressBar.value = 0;
+        // Build video options
+        const videoOptions = {
+            codec: getVideoCodec(settings.codec),
+            bitrate: videoTargetBitrateKbps * 1000,
+        };
 
-        // Write input file to virtual filesystem
-        const fileBuffer = await inputFile.arrayBuffer();
-        await ffmpeg.writeFile(inputFileName, new Uint8Array(fileBuffer));
+        // Set frame rate if specified
+        if (settings.frameRate) {
+            videoOptions.frameRate = settings.frameRate;
+        }
 
-        ffmpeg.on("progress", progressHandler);
-        ffmpeg.on("log", logHandler);
+        // Set resolution if specified
+        if (settings.resolution) {
+            res = getVideoResolution(settings.resolution);
+            videoOptions.width = res.width;
+            videoOptions.height = res.height;
+        }
 
-        // Run ffmpeg
-        await ffmpeg.exec(ffmpegCommand);
+        // Transcode audio if included, discard if not
+        const audioOptions = settings.includeAudio
+            ? { codec: getAudioCodec(settings.codec), bitrate: audioTargetBitrateKbps * 1000 }
+            : { discard: true };
+
+        // Initialise conversion
+        const conversion = await Conversion.init({
+            input,
+            output,
+            tracks: "primary",
+            video: videoOptions,
+            audio: audioOptions,
+        });
+
+        // Abort if conversion is invalid
+        if (!conversion.isValid) {
+            throw new Error("Unsupported codec or track configuration");
+        }
+
+        // Set up progress callback
+        conversion.onProgress = (progress, progressTime) => {
+            progressBar.value = Math.round(progress * 100);
+            progressText.textContent = `Encoding... ${Math.round(progress * 100)}% at ${Math.round(progressTime)}s`;
+        };
+
+        // Run conversion
+        await conversion.execute();
 
         // Update ui after successful encoding
         progressText.textContent = "Encoding complete!";
         progressBar.value = 100;
         downloadBtn.hidden = false;
         resetBtn.hidden = false;
-        currentOutputFileName = outputFileName;
 
         // Set up download handler
-        downloadBtn.onclick = async () => {
-            const outputData = await ffmpeg.readFile(outputFileName);
-            const blob = new Blob([outputData.buffer], { type: "video/mp4" });
+        downloadBtn.onclick = () => {
+            const blob = new Blob([output.target.buffer], { type: "video/mp4" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -265,16 +278,8 @@ async function runCompression(inputFile, ffmpegCommand, inputFileName, outputFil
         downloadBtn.hidden = true;
         resetBtn.hidden = false;
         progressText.textContent = `Error: ${err.message}`;
-        console.error("FFmpeg error:", err);
     } finally {
-        // Clean up filesystem
-        try {
-            await ffmpeg.deleteFile(inputFileName);
-        } catch (e) { }
-
-        // Remove event listeners
-        ffmpeg.off("progress", progressHandler);
-        ffmpeg.off("log", logHandler);
+        input.dispose();
     }
 }
 
